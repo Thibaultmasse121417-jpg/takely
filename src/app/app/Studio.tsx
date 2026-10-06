@@ -73,6 +73,7 @@ export function Studio({
   const [aspect, setAspect] = useState<Aspect>("9:16");
   const [language, setLanguage] = useState(defaultLanguage);
   const [voiceover, setVoiceover] = useState(true);
+  const [music, setMusic] = useState(true);
 
   // generic settings
   const kindModels = useMemo(() => MODELS.filter((m) => m.kind === mode), [mode]);
@@ -92,7 +93,7 @@ export function Studio({
     window.history.replaceState(null, "", m === "ad" ? "/app" : `/app?mode=${m}`);
   }
 
-  const cost = mode === "ad" ? adCost(duration, voiceover) : model ? costFor(model, { duration: clipLen }) : 0;
+  const cost = mode === "ad" ? adCost(duration, voiceover, music) : model ? costFor(model, { duration: clipLen }) : 0;
   const aspects = mode === "ad" ? AD_ASPECTS : model?.aspects ?? [];
 
   async function submit(e: React.FormEvent) {
@@ -107,10 +108,10 @@ export function Studio({
         const r = await fetch("/api/ads", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ brief: text, productImageUrl: image, language, duration, aspect, voiceover }),
+          body: JSON.stringify({ brief: text, productImageUrl: image, language, duration, aspect, voiceover, music }),
         });
         const j = await r.json();
-        if (!r.ok) throw new Error(j.error === "not_enough_credits" ? t.app.notEnough : j.error);
+        if (!r.ok) throw new Error(j.error === "not_enough_credits" ? t.app.notEnough : j.error === "too_many_running" ? t.app.tooMany : j.error);
         router.push(`/app/ads/${j.id}`);
         return;
       }
@@ -120,7 +121,7 @@ export function Studio({
         body: JSON.stringify({ model: model.id, prompt: text, imageUrl: image, aspect, duration: clipLen }),
       });
       const j = await r.json();
-      if (!r.ok) throw new Error(j.error === "not_enough_credits" ? t.app.notEnough : j.error);
+      if (!r.ok) throw new Error(j.error === "not_enough_credits" ? t.app.notEnough : j.error === "too_many_running" ? t.app.tooManyGen : j.error);
       setGens((g) => [j.generation, ...g]);
       router.refresh();
     } catch (err) {
@@ -192,6 +193,9 @@ export function Studio({
                 </label>
                 <button type="button" aria-pressed={voiceover} onClick={() => setVoiceover((v) => !v)} className="chip" data-on={voiceover}>
                   {t.app.voice} {voiceover ? "✓" : "—"}
+                </button>
+                <button type="button" aria-pressed={music} onClick={() => setMusic((v) => !v)} className="chip" data-on={music}>
+                  {t.app.music} {music ? "✓" : "—"}
                 </button>
               </>
             ) : (

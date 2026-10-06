@@ -168,16 +168,17 @@ export const AD = {
   clipSeconds: 5,
   /** Text-to-speech for the voiceover (ElevenLabs on fal). */
   voiceEndpoint: "fal-ai/elevenlabs/tts/multilingual-v2",
-  /** Timeline assembly (video + audio tracks → one mp4). */
-  composeEndpoint: "fal-ai/ffmpeg-api/compose",
-  credits: { planning: 2, keyframe: 1, clip: 14, voice: 2, compose: 1 },
+  voiceName: "Aria",
+  /** Instrumental background music. */
+  musicEndpoint: "CassetteAI/music-generator",
+  credits: { planning: 2, keyframe: 1, clip: 14, voice: 2, music: 2, edit: 1 },
   durations: [15, 30, 45] as const,
 };
 
-export function adCost(durationSec: number, voiceover: boolean): number {
+export function adCost(durationSec: number, voiceover: boolean, music = true): number {
   const shots = Math.round(durationSec / AD.clipSeconds);
   const c = AD.credits;
-  return c.planning + shots * (c.keyframe + c.clip) + (voiceover ? c.voice : 0) + c.compose;
+  return c.planning + shots * (c.keyframe + c.clip) + (voiceover ? c.voice : 0) + (music ? c.music : 0) + c.edit;
 }
 
 /** Pulls the main media url out of whatever shape a fal endpoint returns. */
@@ -191,6 +192,7 @@ export function extractResult(data: unknown): { url: string | null; thumb: strin
     d.image?.url ??
     d.audio?.url ??
     d.audio_url ??
+    d.audio_file?.url ??
     null;
   const thumb = d.thumbnail_url ?? d.images?.[0]?.url ?? null;
   return { url, thumb };

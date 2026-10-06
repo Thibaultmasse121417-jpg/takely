@@ -6,6 +6,12 @@ fal.config({ credentials: process.env.FAL_KEY });
 
 export { fal };
 
+type Queue = Pick<typeof fal.queue, "submit" | "status" | "result">;
+/** fal's job queue (the pipeline test injects a fake one). */
+export function falQueue(): Queue {
+  return (globalThis as { __takelyTestFal?: Queue }).__takelyTestFal ?? fal.queue;
+}
+
 const secret = () => process.env.WEBHOOK_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || "dev";
 
 /** Signs a generation id so the fal webhook can't be spoofed by anyone who guesses ids. */

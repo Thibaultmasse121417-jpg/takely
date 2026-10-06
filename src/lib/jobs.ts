@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fal, webhookUrlFor } from "./fal";
+import { falQueue, webhookUrlFor } from "./fal";
 import { AD, adCost, extractResult } from "./models";
 import { supabaseAdmin } from "./supabase/server";
 import type { Plan } from "./planner";
@@ -21,7 +21,7 @@ export type GenRow = {
   cost: number;
   error: string | null;
   ad_id: string | null;
-  role: "keyframe" | "clip" | "voice" | "final" | null;
+  role: "keyframe" | "clip" | "voice" | "music" | "final" | null;
   shot_index: number | null;
   created_at: string;
 };
@@ -38,6 +38,9 @@ export type AdRow = {
   title: string | null;
   plan: Plan | null;
   status: "planning" | "shooting" | "assembling" | "completed" | "failed";
+  music: boolean;
+  formats: Record<string, string> | null;
+  updated_at: string;
   final_url: string | null;
   thumbnail_url: string | null;
   cost: number;
@@ -102,7 +105,7 @@ export async function submitGeneration(args: {
   }
 
   try {
-    const queued = await fal.queue.submit(args.endpoint, {
+    const queued = await falQueue().submit(args.endpoint, {
       input: args.input,
       webhookUrl: webhookUrlFor(row.id),
     });
@@ -160,16 +163,23 @@ export async function settleGeneration(id: string, outcome: { ok: true; data: un
 }
 
 /** Polling fallback (local dev, missed webhooks): asks fal where the job is. */
+/** A job still pending after this long is considered lost: it fails and is refunded. */
+const JOB_TIMEOUT_MS = 30 * 60 * 1000;
+
 export async function syncGeneration(gen: GenRow): Promise<void> {
-  if (!["queued", "running"].includes(gen.status) || !gen.fal_request_id) return;
+  if (!["queued", "running"].includes(gen.status)) return;
+  if (Date.now() - new Date(gen.created_at).getTime() > JOB_TIMEOUT_MS) {
+    return settleGeneration(gen.id, { ok: false, error: "The model took too long to respond." });
+  }
+  if (!gen.fal_request_id) return;
   try {
-    const st = await fal.queue.status(gen.endpoint, { requestId: gen.fal_request_id, logs: false });
+    const st = await falQueue().status(gen.endpoint, { requestId: gen.fal_request_id, logs: false });
     if (st.status !== "COMPLETED") return;
   } catch {
     return;
   }
   try {
-    const res = await fal.queue.result(gen.endpoint, { requestId: gen.fal_request_id });
+    const res = await falQueue().result(gen.endpoint, { requestId: gen.fal_request_id });
     await settleGeneration(gen.id, { ok: true, data: res.data });
   } catch (e) {
     await settleGeneration(gen.id, { ok: false, error: errorText(e) });
@@ -177,10 +187,24 @@ export async function syncGeneration(gen: GenRow): Promise<void> {
 }
 
 /* ------------------------------------------------------------------ */
-/* Product-ad pipeline: plan → keyframe per shot → clip per shot (+ voice) → compose */
+/* Product-ad pipeline: plan → keyframe per shot → clip per shot (+ voice, music) → montage */
 /* ------------------------------------------------------------------ */
 
 const KONTEXT_ASPECTS: Record<string, string> = { "9:16": "9:16", "16:9": "16:9", "1:1": "1:1", "4:5": "3:4" };
+/** Steps whose failure doesn't sink the ad: it is delivered without that track. */
+const OPTIONAL_ROLES = ["voice", "music"];
+/** An assembly that hasn't finished after this long (crashed / timed out) is restarted. */
+const ASSEMBLY_STALE_MS = 6 * 60 * 1000;
+
+/** Runs work after the HTTP response when called inside a request (Vercel keeps the function alive). */
+async function runAfterResponse(fn: () => Promise<void>) {
+  try {
+    const { after } = await import("next/server");
+    after(fn);
+  } catch {
+    void fn();
+  }
+}
 
 export async function startAdShoot(ad: AdRow) {
   const plan = ad.plan!;
@@ -214,7 +238,21 @@ export async function startAdShoot(ad: AdRow) {
         prompt: plan.voiceover,
         adId: ad.id,
         role: "voice",
-        input: { text: plan.voiceover, voice: "Aria", stability: 0.5, similarity_boost: 0.75, speed: 1 },
+        input: { text: plan.voiceover, voice: AD.voiceName, stability: 0.5, similarity_boost: 0.75, speed: 1 },
+      }),
+    );
+  }
+  if (ad.music && plan.music_prompt?.trim()) {
+    jobs.push(
+      submitGeneration({
+        userId: ad.user_id,
+        kind: "audio",
+        model: "ad-music",
+        endpoint: AD.musicEndpoint,
+        prompt: plan.music_prompt,
+        adId: ad.id,
+        role: "music",
+        input: { prompt: `${plan.music_prompt}. Instrumental, no vocals, commercial ad background music.`, duration: ad.duration + 2 },
       }),
     );
   }
@@ -236,6 +274,11 @@ export async function failAd(adId: string, reason: string) {
   await addCredits(sb, ad.user_id, refund, "refund-ad", `refund-ad:${ad.id}`);
 }
 
+async function startAssembly(adId: string) {
+  const { assembleAd } = await import("./assemble");
+  await runAfterResponse(() => assembleAd(adId));
+}
+
 export async function advanceAd(adId: string) {
   const sb = supabaseAdmin();
   const { data: ad } = await sb.from("ads").select().eq("id", adId).single<AdRow>();
@@ -247,8 +290,7 @@ export async function advanceAd(adId: string) {
   const find = (role: GenRow["role"], i: number | null = null) =>
     all.find((g) => g.role === role && (i === null ? g.shot_index === null : g.shot_index === i));
 
-  // A missing voiceover isn't worth losing the whole ad for; any other failed step is.
-  const failed = all.find((g) => g.status === "failed" && g.role !== "voice");
+  const failed = all.find((g) => g.status === "failed" && !OPTIONAL_ROLES.includes(g.role ?? ""));
   if (failed) return failAd(adId, failed.error ?? "A step failed.");
 
   if (ad.status === "shooting") {
@@ -277,13 +319,13 @@ export async function advanceAd(adId: string) {
       }
     }
 
-    const clips = Array.from({ length: shotCount }, (_, i) => find("clip", i));
-    const clipsDone = clips.every((c) => c?.status === "completed" && c.result_url);
-    const voice = find("voice");
-    const voiceDone = !ad.voiceover || !voice || voice.status === "completed" || voice.status === "failed";
-    if (!clipsDone || !voiceDone) return;
+    const clipsDone = Array.from({ length: shotCount }, (_, i) => find("clip", i)).every(
+      (c) => c?.status === "completed" && c.result_url,
+    );
+    const settled = (g?: GenRow) => !g || g.status === "completed" || g.status === "failed";
+    if (!clipsDone || !settled(find("voice")) || !settled(find("music"))) return;
 
-    // Exactly one worker moves the ad to assembling.
+    // Exactly one worker moves the ad to assembling and starts the edit.
     const { data: won } = await sb
       .from("ads")
       .update({ status: "assembling", updated_at: new Date().toISOString() })
@@ -291,47 +333,23 @@ export async function advanceAd(adId: string) {
       .eq("status", "shooting")
       .select()
       .maybeSingle();
-    if (!won) return;
-
-    const ms = AD.clipSeconds * 1000;
-    const tracks: Record<string, unknown>[] = [
-      {
-        id: "video",
-        type: "video",
-        keyframes: clips.map((c, i) => ({ url: c!.result_url, timestamp: i * ms, duration: ms })),
-      },
-    ];
-    if (voice?.status === "completed" && voice.result_url) {
-      tracks.push({ id: "voice", type: "audio", keyframes: [{ url: voice.result_url, timestamp: 0, duration: shotCount * ms }] });
-    }
-    await submitGeneration({
-      userId: ad.user_id,
-      kind: "compose",
-      model: "ad-compose",
-      endpoint: AD.composeEndpoint,
-      adId,
-      role: "final",
-      aspect: ad.aspect,
-      input: { tracks },
-    });
+    if (won) await startAssembly(adId);
     return;
   }
 
   if (ad.status === "assembling") {
-    const final = find("final");
-    if (final?.status === "completed" && final.result_url) {
-      const firstKf = find("keyframe", 0);
-      await sb
-        .from("ads")
-        .update({
-          status: "completed",
-          final_url: final.result_url,
-          thumbnail_url: final.thumbnail_url ?? firstKf?.result_url ?? null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", adId)
-        .eq("status", "assembling");
-    }
+    // Restart an edit that crashed or timed out.
+    const age = Date.now() - new Date(ad.updated_at).getTime();
+    if (age < ASSEMBLY_STALE_MS) return;
+    const { data: won } = await sb
+      .from("ads")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", adId)
+      .eq("status", "assembling")
+      .eq("updated_at", ad.updated_at)
+      .select()
+      .maybeSingle();
+    if (won) await startAssembly(adId);
   }
 }
 

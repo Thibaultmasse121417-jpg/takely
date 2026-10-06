@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyGeneration } from "@/lib/fal";
 import { settleGeneration } from "@/lib/jobs";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 /** fal.ai calls this when a queued job finishes. */
 export async function POST(req: Request) {

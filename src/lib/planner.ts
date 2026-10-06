@@ -18,6 +18,7 @@ export const PlanSchema = z.object({
     )
     .min(1),
   voiceover: z.string(),
+  music_prompt: z.string().optional(),
 });
 export type Plan = z.infer<typeof PlanSchema>;
 
@@ -31,6 +32,7 @@ Rules:
 - Respect the brief's story and order. The last shot is a clean hero/packshot of the product.
 - Never include on-screen text, subtitles or brand names in prompts.
 - voiceover: a natural spoken script in the requested language, short enough to be read in about 2.3 words per second over the total duration. No stage directions.
+- music_prompt: one English line describing instrumental background music that fits the ad (genre, mood, tempo in BPM, instruments).
 - title: a short internal title for the project, in the requested language.
 - shots[].title and shots[].description: short, in the requested language, for the user's storyboard.`;
 
@@ -75,8 +77,9 @@ export async function planAd(opts: {
               },
             },
             voiceover: { type: "string" },
+            music_prompt: { type: "string" },
           },
-          required: ["title", "product_description", "locked_elements", "shots", "voiceover"],
+          required: ["title", "product_description", "locked_elements", "shots", "voiceover", "music_prompt"],
         },
       },
     ],

@@ -4,9 +4,9 @@ import { AD, adCost } from "@/lib/models";
 import { AD_LANGUAGES } from "@/lib/i18n";
 import { planAd } from "@/lib/planner";
 import { requireUser, supabaseAdmin } from "@/lib/supabase/server";
-import { failAd, spendCredits, startAdShoot, type AdRow } from "@/lib/jobs";
+import { addCredits, failAd, spendCredits, startAdShoot, type AdRow } from "@/lib/jobs";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const Body = z.object({
   brief: z.string().trim().min(10).max(2000),
@@ -15,6 +15,7 @@ const Body = z.object({
   duration: z.number().int().refine((d) => (AD.durations as readonly number[]).includes(d)),
   aspect: z.enum(["9:16", "16:9", "1:1", "4:5"]),
   voiceover: z.boolean(),
+  music: z.boolean().default(true),
 });
 
 export async function POST(req: Request) {
@@ -27,7 +28,16 @@ export async function POST(req: Request) {
 
   const admin = supabaseAdmin();
   const id = crypto.randomUUID();
-  const cost = adCost(b.duration, b.voiceover);
+  const cost = adCost(b.duration, b.voiceover, b.music);
+
+  // At most 3 ads in production at once per account.
+  const { count } = await admin
+    .from("ads")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .in("status", ["planning", "shooting", "assembling"]);
+  if ((count ?? 0) >= 3) return NextResponse.json({ error: "too_many_running" }, { status: 429 });
+
   if (!(await spendCredits(admin, user.id, cost, "ad", `ad:${id}`))) {
     return NextResponse.json({ error: "not_enough_credits" }, { status: 402 });
   }
@@ -43,12 +53,14 @@ export async function POST(req: Request) {
       duration: b.duration,
       aspect: b.aspect,
       voiceover: b.voiceover,
+      music: b.music,
       cost,
       status: "planning",
     })
     .select()
     .single<AdRow>();
   if (error || !ad) {
+    await addCredits(admin, user.id, cost, "refund-ad", `refund-ad:${id}`);
     return NextResponse.json({ error: "db_error" }, { status: 500 });
   }
 

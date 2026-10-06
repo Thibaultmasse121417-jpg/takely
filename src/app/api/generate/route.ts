@@ -28,6 +28,16 @@ export async function POST(req: Request) {
 
   const cost = costFor(model, { duration });
   const admin = supabaseAdmin();
+
+  // At most 6 generations running at once per account.
+  const { count } = await admin
+    .from("generations")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .is("ad_id", null)
+    .in("status", ["queued", "running"]);
+  if ((count ?? 0) >= 6) return NextResponse.json({ error: "too_many_running" }, { status: 429 });
+
   const ref = `gen:${crypto.randomUUID()}`;
   if (!(await spendCredits(admin, user.id, cost, `generate:${model.id}`, ref))) {
     return NextResponse.json({ error: "not_enough_credits" }, { status: 402 });

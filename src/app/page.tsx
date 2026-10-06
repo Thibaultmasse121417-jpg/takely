@@ -150,9 +150,9 @@ export default async function Home() {
         <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-4 text-[13px] text-faint">
           <span>© {new Date().getFullYear()} takely</span>
           <div className="flex gap-5">
-            <a href="#" className="hover:text-text">{t.footer.legal}</a>
-            <a href="#" className="hover:text-text">{t.footer.terms}</a>
-            <a href="mailto:hello@takely.video" className="hover:text-text">{t.footer.contact}</a>
+            <Link href="/legal#mentions" className="hover:text-text">{t.footer.legal}</Link>
+            <Link href="/legal#cgv" className="hover:text-text">{t.footer.terms}</Link>
+            <Link href="/legal#confidentialite" className="hover:text-text">{t.footer.privacy}</Link>
           </div>
         </div>
       </footer>

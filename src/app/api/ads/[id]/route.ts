@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUser, supabaseAdmin } from "@/lib/supabase/server";
 import { advanceAd, syncGeneration, type AdRow, type GenRow } from "@/lib/jobs";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;

@@ -13,11 +13,15 @@ type Ad = {
   aspect: string;
   language: string;
   voiceover: boolean;
+  music: boolean;
+  formats: Record<string, string> | null;
   status: "planning" | "shooting" | "assembling" | "completed" | "failed";
   plan: { shots: { title: string; description: string }[]; voiceover: string; locked_elements: string[] } | null;
   final_url: string | null;
   error: string | null;
 };
+
+const ORDER = ["9:16", "4:5", "1:1", "16:9"];
 
 function Step({ state, label }: { state: "done" | "active" | "todo"; label: string }) {
   return (
@@ -61,6 +65,7 @@ export function AdView({ id, t }: { id: string; t: Dict["ad"] }) {
   const keyframesDone = shots.length > 0 && shots.every((_, i) => g("keyframe", i)?.status === "completed");
   const clipsDone = shots.length > 0 && shots.every((_, i) => g("clip", i)?.status === "completed");
   const voice = g("voice");
+  const music = g("music");
   const order = ["planning", "shooting", "assembling", "completed"];
   const at = order.indexOf(ad.status);
   const s = (done: boolean, active: boolean) => (done ? "done" : active ? "active" : "todo") as "done" | "active" | "todo";
@@ -79,7 +84,7 @@ export function AdView({ id, t }: { id: string; t: Dict["ad"] }) {
           {ad.status === "failed" && <span className="rounded-full border border-danger px-2.5 py-0.5 text-xs text-danger">{t.failed}</span>}
         </div>
         {ad.final_url && (
-          <a href={ad.final_url} download target="_blank" rel="noreferrer" className="btn-primary">{t.download}</a>
+          <a href={ad.final_url} download target="_blank" rel="noreferrer" className="btn-primary">{t.download} · {ad.aspect}</a>
         )}
       </header>
 
@@ -104,9 +109,24 @@ export function AdView({ id, t }: { id: string; t: Dict["ad"] }) {
               <Step state={s(keyframesDone, at === 1 && !keyframesDone)} label={t.keyframes} />
               <Step state={s(clipsDone, at === 1 && keyframesDone)} label={`${t.clips} (${clipsShot}/${shots.length || "–"})`} />
               {ad.voiceover && <Step state={s(voice?.status === "completed", !!voice && voice.status !== "completed")} label={t.voice} />}
+              {ad.music && <Step state={s(music?.status === "completed", !!music && music.status !== "completed")} label={t.music} />}
               <Step state={s(at >= 3, at === 2)} label={t.assembling} />
             </ul>
           </div>
+
+          {ad.status === "completed" && ad.formats && Object.keys(ad.formats).length > 0 && (
+            <div className="card flex flex-col gap-1 p-4">
+              <span className="mb-1 text-[13px] font-medium">{t.formats}</span>
+              {Object.entries(ad.formats)
+                .sort(([a], [b]) => ORDER.indexOf(a) - ORDER.indexOf(b))
+                .map(([aspect, url]) => (
+                  <a key={aspect} href={url} download target="_blank" rel="noreferrer" className="flex min-h-11 items-center justify-between gap-3 border-b border-line-soft py-2 text-[13px] last:border-0 hover:text-accent">
+                    <span><span className="font-mono">{aspect}</span> <span className="text-faint">· {aspect === "9:16" ? t.story : aspect === "4:5" ? t.feed : aspect === "1:1" ? t.square : t.wide}</span></span>
+                    <span aria-hidden="true">↓</span>
+                  </a>
+                ))}
+            </div>
+          )}
 
           {ad.status === "failed" && <p role="alert" className="text-sm text-danger">{t.refunded}{ad.error ? ` (${ad.error})` : ""}</p>}
 
