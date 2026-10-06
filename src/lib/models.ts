@@ -30,30 +30,51 @@ export interface ModelDef {
   durations?: number[];
   /** Credits charged per generation (images) or per 5 seconds (video). */
   credits: number;
-  blurb: string;
+  blurb: { en: string; fr: string };
   buildInput(form: GenerateForm): Record<string, unknown>;
 }
 
 const klingAspect = (a: Aspect) => (a === "4:5" ? "9:16" : a);
 
+const kling = (tier: "pro" | "master") => ({
+  endpoint: `fal-ai/kling-video/v2.1/${tier}/text-to-video`,
+  imageEndpoint: `fal-ai/kling-video/v2.1/${tier}/image-to-video`,
+  buildInput: (f: GenerateForm) => ({
+    prompt: f.prompt,
+    duration: String(f.duration >= 10 ? 10 : 5),
+    aspect_ratio: klingAspect(f.aspect),
+    ...(f.imageUrl ? { image_url: f.imageUrl } : {}),
+    negative_prompt: "blur, distort, low quality, text artifacts, deformed product",
+  }),
+});
+
+/*
+ * Pricing rule: 1 credit ≈ €0.08–0.10 for the buyer. Each model is priced so its fal.ai
+ * cost stays around 35 % of what the user pays (≈ 65 % gross margin). Approximate fal
+ * costs used (check fal.ai/pricing): Kling 2.1 Pro ≈ $0.49 / 5 s, Kling 2.1 Master ≈ $1.40 / 5 s,
+ * Veo 3 Fast with audio ≈ $3.20 / 8 s, Seedance 1 Pro 1080p ≈ $0.62 / 5 s, FLUX Ultra ≈ $0.06,
+ * Nano Banana ≈ $0.04, FLUX Kontext ≈ $0.04 per image.
+ */
 export const MODELS: ModelDef[] = [
   {
-    id: "kling",
-    label: "Kling 2.1 Master",
+    id: "kling-pro",
+    label: "Kling 2.1 Pro",
     kind: "video",
-    endpoint: "fal-ai/kling-video/v2.1/master/text-to-video",
-    imageEndpoint: "fal-ai/kling-video/v2.1/master/image-to-video",
+    ...kling("pro"),
     aspects: ["9:16", "16:9", "1:1"],
     durations: [5, 10],
     credits: 14,
-    blurb: "Cinematic motion, strong product fidelity from a start image.",
-    buildInput: (f) => ({
-      prompt: f.prompt,
-      duration: String(f.duration >= 10 ? 10 : 5),
-      aspect_ratio: klingAspect(f.aspect),
-      ...(f.imageUrl ? { image_url: f.imageUrl } : {}),
-      negative_prompt: "blur, distort, low quality, text artifacts, deformed product",
-    }),
+    blurb: { en: "Best value. Cinematic motion, keeps your product faithful from a start image.", fr: "Meilleur rapport qualité-prix. Mouvements cinématiques, produit fidèle à l'image de départ." },
+  },
+  {
+    id: "kling-master",
+    label: "Kling 2.1 Master",
+    kind: "video",
+    ...kling("master"),
+    aspects: ["9:16", "16:9", "1:1"],
+    durations: [5, 10],
+    credits: 40,
+    blurb: { en: "Top quality motion and detail, for hero shots.", fr: "Qualité maximale de mouvement et de détail, pour les plans phares." },
   },
   {
     id: "veo",
@@ -63,8 +84,8 @@ export const MODELS: ModelDef[] = [
     imageEndpoint: "fal-ai/veo3/fast/image-to-video",
     aspects: ["16:9", "9:16"],
     durations: [8],
-    credits: 30,
-    blurb: "Native sound and dialogue, very realistic.",
+    credits: 90,
+    blurb: { en: "Native sound and dialogue, very realistic.", fr: "Son et dialogues natifs, très réaliste." },
     buildInput: (f) => ({
       prompt: f.prompt,
       aspect_ratio: f.aspect === "16:9" ? "16:9" : "9:16",
@@ -81,8 +102,8 @@ export const MODELS: ModelDef[] = [
     imageEndpoint: "fal-ai/bytedance/seedance/v1/pro/image-to-video",
     aspects: ["9:16", "16:9", "1:1", "4:5"],
     durations: [5, 10],
-    credits: 10,
-    blurb: "Fast and affordable, good multi-shot storytelling.",
+    credits: 18,
+    blurb: { en: "Fast, good at multi-shot storytelling.", fr: "Rapide, bon pour raconter en plusieurs plans." },
     buildInput: (f) => ({
       prompt: f.prompt,
       duration: String(f.duration >= 10 ? 10 : 5),
@@ -97,11 +118,11 @@ export const MODELS: ModelDef[] = [
     kind: "image",
     endpoint: "fal-ai/flux-pro/v1.1-ultra",
     aspects: ["9:16", "16:9", "1:1", "4:5"],
-    credits: 1,
-    blurb: "Photorealistic images from text.",
+    credits: 2,
+    blurb: { en: "Photorealistic images from text.", fr: "Images photoréalistes à partir d'un texte." },
     buildInput: (f) => ({
       prompt: f.prompt,
-      aspect_ratio: f.aspect === "4:5" ? "4:5" : f.aspect,
+      aspect_ratio: f.aspect,
       num_images: 1,
       output_format: "jpeg",
     }),
@@ -114,7 +135,7 @@ export const MODELS: ModelDef[] = [
     imageEndpoint: "fal-ai/nano-banana/edit",
     aspects: ["9:16", "16:9", "1:1", "4:5"],
     credits: 1,
-    blurb: "Edit or restage a photo while keeping the product identical.",
+    blurb: { en: "Edit or restage a photo while keeping the product identical.", fr: "Retouche ou remise en scène d'une photo en gardant le produit identique." },
     buildInput: (f) => ({
       prompt: `${f.prompt}\nAspect ratio ${f.aspect}.`,
       num_images: 1,
@@ -142,8 +163,8 @@ export function costFor(model: ModelDef, form: Pick<GenerateForm, "duration">): 
 export const AD = {
   /** Image model used to stage the product in each shot's first frame (keeps the product, sets the aspect). */
   keyframeEndpoint: "fal-ai/flux-pro/kontext",
-  /** Image-to-video model used to animate each shot. */
-  clipEndpoint: "fal-ai/kling-video/v2.1/master/image-to-video",
+  /** Image-to-video model used to animate each shot (Pro: ~3x cheaper than Master, still premium). */
+  clipEndpoint: "fal-ai/kling-video/v2.1/pro/image-to-video",
   clipSeconds: 5,
   /** Text-to-speech for the voiceover (ElevenLabs on fal). */
   voiceEndpoint: "fal-ai/elevenlabs/tts/multilingual-v2",

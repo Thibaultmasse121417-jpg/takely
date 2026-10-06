@@ -1,7 +1,18 @@
 "use client";
 import { useState } from "react";
 
-export function BuyButton({ pack, label, primary }: { pack: string; label: string; primary: boolean }) {
+/** Posts to a billing endpoint and follows the Stripe URL it returns. */
+export function BuyButton({
+  endpoint = "/api/checkout",
+  payload,
+  label,
+  primary,
+}: {
+  endpoint?: string;
+  payload?: Record<string, string>;
+  label: string;
+  primary: boolean;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   return (
@@ -13,7 +24,11 @@ export function BuyButton({ pack, label, primary }: { pack: string; label: strin
         onClick={async () => {
           setBusy(true);
           setError("");
-          const r = await fetch("/api/checkout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pack }) });
+          const r = await fetch(endpoint, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload ?? {}),
+          });
           const j = await r.json().catch(() => ({}));
           if (r.ok && j.url) window.location.href = j.url;
           else {

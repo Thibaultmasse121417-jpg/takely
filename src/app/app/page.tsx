@@ -29,6 +29,7 @@ export default async function StudioPage({ searchParams }: { searchParams: Promi
     <Studio
       key={initialMode}
       t={t}
+      locale={locale}
       initialMode={initialMode}
       defaultLanguage={AD_LANGUAGES.some((l) => l.code === locale) ? locale : "en"}
       credits={profile?.credits ?? 0}

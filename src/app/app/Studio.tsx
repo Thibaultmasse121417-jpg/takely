@@ -45,6 +45,7 @@ function Seg<T extends string | number>({
 
 export function Studio({
   t,
+  locale,
   initialMode,
   defaultLanguage,
   credits,
@@ -52,6 +53,7 @@ export function Studio({
   recentAds,
 }: {
   t: Dict;
+  locale: string;
   initialMode: Mode;
   defaultLanguage: string;
   credits: number;
@@ -227,7 +229,7 @@ export function Studio({
               </button>
             </div>
           </div>
-          {model && mode !== "ad" && <p className="text-xs text-faint">{model.blurb}</p>}
+          {model && mode !== "ad" && <p className="text-xs text-faint">{model.blurb[locale === "fr" ? "fr" : "en"]}</p>}
           {error && <p role="alert" className="text-sm text-danger">{error}</p>}
         </form>
       </div>

@@ -11,7 +11,7 @@ Studio IA de pubs vidéo et de contenus : **photo produit + une phrase → pub v
 | `/app` | Studio : onglets **Pub produit**, **Vidéo**, **Image** |
 | `/app/ads/[id]` | Suivi de production d'une pub en direct, puis lecteur + téléchargement |
 | `/app/library` | Toutes les générations |
-| `/app/billing` | Achat de packs de crédits (Stripe Checkout) |
+| `/app/billing` | Abonnements mensuels + recharges ponctuelles (Stripe Checkout, portail client) |
 
 ### Pipeline « Pub produit »
 
@@ -27,9 +27,9 @@ Les crédits sont débités au lancement et **remboursés automatiquement** si u
 
 ## Mise en route
 
-1. **Supabase** : créez un projet, puis exécutez `supabase/migrations/0001_init.sql` dans le SQL Editor. Dans Authentication › URL Configuration, ajoutez `https://VOTRE-DOMAINE/auth/callback` (et `http://localhost:3000/auth/callback`).
+1. **Supabase** : créez un projet, puis exécutez `supabase/migrations/0001_init.sql` puis `0002_subscriptions.sql` dans le SQL Editor. Dans Authentication › URL Configuration, ajoutez `https://VOTRE-DOMAINE/auth/callback` (et `http://localhost:3000/auth/callback`).
 2. **Clés** : copiez `.env.example` en `.env.local` et remplissez-le (Supabase, fal.ai, Anthropic, Stripe, `WEBHOOK_SECRET`).
-3. **Stripe** : créez un webhook vers `https://VOTRE-DOMAINE/api/webhooks/stripe` avec l'événement `checkout.session.completed`, et mettez son secret dans `STRIPE_WEBHOOK_SECRET`.
+3. **Stripe** : créez un webhook vers `https://VOTRE-DOMAINE/api/webhooks/stripe` avec les événements `checkout.session.completed`, `invoice.paid`, `customer.subscription.created`, `customer.subscription.updated` et `customer.subscription.deleted`, et mettez son secret dans `STRIPE_WEBHOOK_SECRET`. Activez aussi le portail client (Settings › Billing › Customer portal).
 4. Lancez :
 
 ```bash
@@ -38,6 +38,13 @@ npm run dev
 ```
 
 5. **Déploiement** : Vercel (import du dépôt GitHub, mêmes variables d'environnement, `NEXT_PUBLIC_APP_URL` = votre domaine).
+
+## Offres
+
+- **Abonnements** (`src/lib/billing.ts`) : Starter 19 €/mois (200 crédits), Pro 49 €/mois (600), Agency 149 €/mois (2000). Les crédits sont versés à chaque facture payée et se cumulent.
+- **Recharges** : 100 crédits 10 €, 300 crédits 27 €, 1000 crédits 85 €.
+- **Coûts visés** : chaque modèle est tarifé pour que le coût fal.ai reste autour de 35 % du prix payé (≈ 65 % de marge brute). Les pubs utilisent Kling 2.1 Pro (≈ 3 fois moins cher que Master).
+- Changer d'offre : l'abonné résilie dans le portail puis reprend la nouvelle offre (le changement direct d'offre demande des prix Stripe enregistrés, prochaine étape).
 
 ## À ajuster avant la mise en ligne
 

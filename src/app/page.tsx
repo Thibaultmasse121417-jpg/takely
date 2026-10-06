@@ -3,7 +3,7 @@ import { Logo } from "@/components/Logo";
 import { LangSwitch } from "@/components/LangSwitch";
 import { getServerDict } from "@/lib/locale";
 import { AD_LANGUAGES } from "@/lib/i18n";
-import { PACKS, formatPrice } from "@/lib/billing";
+import { PACKS, PLANS, formatPrice } from "@/lib/billing";
 
 const EXAMPLES = [
   { tag: "COFFEE", tone: "#1c1c1f" },
@@ -128,15 +128,21 @@ export default async function Home() {
             <p className="text-muted">{t.pricing.note}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            {PACKS.map((p) => (
+            {PLANS.map((p) => (
               <div key={p.id} className={`flex flex-col gap-4 rounded-2xl border p-7 ${p.popular ? "border-accent bg-[#141510]" : "border-line-soft"}`}>
                 <span className={`text-[15px] ${p.popular ? "text-accent" : "text-muted"}`}>{p.name}{p.popular ? ` · ${t.pricing.popular}` : ""}</span>
-                <span className="text-4xl font-semibold tracking-[-0.03em]">{formatPrice(p.priceCents, locale)}</span>
-                <span className="text-[15px] text-muted">{p.credits} {t.pricing.credits}</span>
-                <Link href="/app/billing" className={p.popular ? "btn-primary mt-2" : "btn-ghost mt-2"}>{t.pricing.buy}</Link>
+                <span className="text-4xl font-semibold tracking-[-0.03em]">
+                  {formatPrice(p.priceCents, locale)}
+                  <span className="text-base font-normal text-muted"> {t.pricing.perMonth}</span>
+                </span>
+                <span className="text-[15px] text-muted">{p.monthlyCredits} {t.pricing.monthly}</span>
+                <Link href="/app/billing" className={p.popular ? "btn-primary mt-2" : "btn-ghost mt-2"}>{t.pricing.subscribe}</Link>
               </div>
             ))}
           </div>
+          <p className="text-sm text-faint">
+            {t.pricing.cancel} {t.pricing.topups} {PACKS.map((p) => `${p.credits} ${t.pricing.credits} · ${formatPrice(p.priceCents, locale)}`).join("  |  ")}
+          </p>
         </div>
       </section>
 

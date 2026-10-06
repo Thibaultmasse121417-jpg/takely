@@ -24,7 +24,13 @@ const fr = {
     image: "Image", imageD: "Génération et retouche d'images, packshots, mises en scène.",
   },
   langs: { title: "Une vidéo.\nTous vos marchés.", sub: "Voix off et scénario rédigés directement dans 32 langues." },
-  pricing: { title: "Payez à l'usage.", credits: "crédits", buy: "Acheter", popular: "Populaire", note: "Une pub de 30 s ≈ 70 crédits · une vidéo de 5 s ≈ 10 crédits · une image ≈ 1 crédit." },
+  pricing: {
+    title: "Un abonnement simple.", credits: "crédits", buy: "Acheter", popular: "Populaire",
+    perMonth: "/ mois", monthly: "crédits chaque mois", subscribe: "S'abonner", current: "Votre offre", manage: "Gérer l'abonnement",
+    topups: "Besoin de plus ?", topupsSub: "Recharges ponctuelles, sans abonnement. Les crédits n'expirent pas.",
+    note: "Une pub de 30 s ≈ 95 crédits · une vidéo de 5 s ≈ 14 crédits · une image ≈ 1 à 2 crédits.",
+    cancel: "Sans engagement, résiliable en un clic.",
+  },
   footer: { legal: "Mentions légales", terms: "CGV", contact: "Contact" },
   app: {
     newAd: "Pub produit", video: "Vidéo", image: "Image", library: "Bibliothèque", credits: "Crédits", recharge: "Recharger", logout: "Déconnexion",
@@ -70,7 +76,13 @@ const en: Dict = {
     image: "Image", imageD: "Image generation and editing, packshots, scenes.",
   },
   langs: { title: "One video.\nEvery market.", sub: "Voiceover and script written natively in 32 languages." },
-  pricing: { title: "Pay as you go.", credits: "credits", buy: "Buy", popular: "Popular", note: "A 30 s ad ≈ 70 credits · a 5 s video ≈ 10 credits · an image ≈ 1 credit." },
+  pricing: {
+    title: "Simple monthly plans.", credits: "credits", buy: "Buy", popular: "Popular",
+    perMonth: "/ month", monthly: "credits every month", subscribe: "Subscribe", current: "Your plan", manage: "Manage subscription",
+    topups: "Need more?", topupsSub: "One-off top-ups, no subscription needed. Credits never expire.",
+    note: "A 30 s ad ≈ 95 credits · a 5 s video ≈ 14 credits · an image ≈ 1–2 credits.",
+    cancel: "No commitment, cancel in one click.",
+  },
   footer: { legal: "Legal notice", terms: "Terms", contact: "Contact" },
   app: {
     newAd: "Product ad", video: "Video", image: "Image", library: "Library", credits: "Credits", recharge: "Top up", logout: "Log out",
