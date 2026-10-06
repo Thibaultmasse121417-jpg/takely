@@ -1,0 +1,176 @@
+/**
+ * Model catalog. Every generation goes through fal.ai, so adding a model is one
+ * entry here: its fal endpoint, what it accepts, what it costs in credits and how
+ * to turn the studio's form into that endpoint's input.
+ *
+ * Endpoint ids and prices change often on fal.ai — check https://fal.ai/models
+ * and adjust `endpoint` and `credits` before going live.
+ */
+
+export type Kind = "image" | "video";
+export type Aspect = "9:16" | "16:9" | "1:1" | "4:5";
+
+export interface GenerateForm {
+  prompt: string;
+  imageUrl?: string | null;
+  aspect: Aspect;
+  duration: number; // seconds, video only
+}
+
+export interface ModelDef {
+  id: string;
+  label: string;
+  kind: Kind;
+  /** Endpoint used when no image is given. */
+  endpoint: string;
+  /** Endpoint used when a start/reference image is given (falls back to `endpoint`). */
+  imageEndpoint?: string;
+  requiresImage?: boolean;
+  aspects: Aspect[];
+  durations?: number[];
+  /** Credits charged per generation (images) or per 5 seconds (video). */
+  credits: number;
+  blurb: string;
+  buildInput(form: GenerateForm): Record<string, unknown>;
+}
+
+const klingAspect = (a: Aspect) => (a === "4:5" ? "9:16" : a);
+
+export const MODELS: ModelDef[] = [
+  {
+    id: "kling",
+    label: "Kling 2.1 Master",
+    kind: "video",
+    endpoint: "fal-ai/kling-video/v2.1/master/text-to-video",
+    imageEndpoint: "fal-ai/kling-video/v2.1/master/image-to-video",
+    aspects: ["9:16", "16:9", "1:1"],
+    durations: [5, 10],
+    credits: 14,
+    blurb: "Cinematic motion, strong product fidelity from a start image.",
+    buildInput: (f) => ({
+      prompt: f.prompt,
+      duration: String(f.duration >= 10 ? 10 : 5),
+      aspect_ratio: klingAspect(f.aspect),
+      ...(f.imageUrl ? { image_url: f.imageUrl } : {}),
+      negative_prompt: "blur, distort, low quality, text artifacts, deformed product",
+    }),
+  },
+  {
+    id: "veo",
+    label: "Veo 3 Fast",
+    kind: "video",
+    endpoint: "fal-ai/veo3/fast",
+    imageEndpoint: "fal-ai/veo3/fast/image-to-video",
+    aspects: ["16:9", "9:16"],
+    durations: [8],
+    credits: 30,
+    blurb: "Native sound and dialogue, very realistic.",
+    buildInput: (f) => ({
+      prompt: f.prompt,
+      aspect_ratio: f.aspect === "16:9" ? "16:9" : "9:16",
+      duration: "8s",
+      generate_audio: true,
+      ...(f.imageUrl ? { image_url: f.imageUrl } : {}),
+    }),
+  },
+  {
+    id: "seedance",
+    label: "Seedance 1 Pro",
+    kind: "video",
+    endpoint: "fal-ai/bytedance/seedance/v1/pro/text-to-video",
+    imageEndpoint: "fal-ai/bytedance/seedance/v1/pro/image-to-video",
+    aspects: ["9:16", "16:9", "1:1", "4:5"],
+    durations: [5, 10],
+    credits: 10,
+    blurb: "Fast and affordable, good multi-shot storytelling.",
+    buildInput: (f) => ({
+      prompt: f.prompt,
+      duration: String(f.duration >= 10 ? 10 : 5),
+      aspect_ratio: f.aspect === "4:5" ? "3:4" : f.aspect,
+      resolution: "1080p",
+      ...(f.imageUrl ? { image_url: f.imageUrl } : {}),
+    }),
+  },
+  {
+    id: "flux",
+    label: "FLUX 1.1 Pro Ultra",
+    kind: "image",
+    endpoint: "fal-ai/flux-pro/v1.1-ultra",
+    aspects: ["9:16", "16:9", "1:1", "4:5"],
+    credits: 1,
+    blurb: "Photorealistic images from text.",
+    buildInput: (f) => ({
+      prompt: f.prompt,
+      aspect_ratio: f.aspect === "4:5" ? "4:5" : f.aspect,
+      num_images: 1,
+      output_format: "jpeg",
+    }),
+  },
+  {
+    id: "nano-banana",
+    label: "Nano Banana (edit)",
+    kind: "image",
+    endpoint: "fal-ai/nano-banana",
+    imageEndpoint: "fal-ai/nano-banana/edit",
+    aspects: ["9:16", "16:9", "1:1", "4:5"],
+    credits: 1,
+    blurb: "Edit or restage a photo while keeping the product identical.",
+    buildInput: (f) => ({
+      prompt: `${f.prompt}\nAspect ratio ${f.aspect}.`,
+      num_images: 1,
+      ...(f.imageUrl ? { image_urls: [f.imageUrl] } : {}),
+    }),
+  },
+];
+
+export function getModel(id: string): ModelDef | undefined {
+  return MODELS.find((m) => m.id === id);
+}
+
+export function endpointFor(model: ModelDef, form: GenerateForm): string {
+  return form.imageUrl && model.imageEndpoint ? model.imageEndpoint : model.endpoint;
+}
+
+export function costFor(model: ModelDef, form: Pick<GenerateForm, "duration">): number {
+  if (model.kind === "image") return model.credits;
+  const units = Math.max(1, Math.ceil((form.duration || 5) / 5));
+  return model.credits * units;
+}
+
+/* ---------- Product-ad pipeline ---------- */
+
+export const AD = {
+  /** Image model used to stage the product in each shot's first frame (keeps the product, sets the aspect). */
+  keyframeEndpoint: "fal-ai/flux-pro/kontext",
+  /** Image-to-video model used to animate each shot. */
+  clipEndpoint: "fal-ai/kling-video/v2.1/master/image-to-video",
+  clipSeconds: 5,
+  /** Text-to-speech for the voiceover (ElevenLabs on fal). */
+  voiceEndpoint: "fal-ai/elevenlabs/tts/multilingual-v2",
+  /** Timeline assembly (video + audio tracks → one mp4). */
+  composeEndpoint: "fal-ai/ffmpeg-api/compose",
+  credits: { planning: 2, keyframe: 1, clip: 14, voice: 2, compose: 1 },
+  durations: [15, 30, 45] as const,
+};
+
+export function adCost(durationSec: number, voiceover: boolean): number {
+  const shots = Math.round(durationSec / AD.clipSeconds);
+  const c = AD.credits;
+  return c.planning + shots * (c.keyframe + c.clip) + (voiceover ? c.voice : 0) + c.compose;
+}
+
+/** Pulls the main media url out of whatever shape a fal endpoint returns. */
+export function extractResult(data: unknown): { url: string | null; thumb: string | null } {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const d = (data ?? {}) as Record<string, any>;
+  const url =
+    d.video?.url ??
+    d.video_url ??
+    d.images?.[0]?.url ??
+    d.image?.url ??
+    d.audio?.url ??
+    d.audio_url ??
+    null;
+  const thumb = d.thumbnail_url ?? d.images?.[0]?.url ?? null;
+  return { url, thumb };
+}
