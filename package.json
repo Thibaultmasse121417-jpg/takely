@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:pipeline": "node --conditions=react-server --import tsx tests/pipeline.test.mts"
+    "test:pipeline": "node --conditions=react-server --import tsx tests/pipeline.test.mts",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "stripe:setup": "node --import tsx scripts/stripe-setup.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

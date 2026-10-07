@@ -1,0 +1,8 @@
+#!/bin/sh
+# Blocks commits that contain Stripe, fal.ai, Anthropic or Supabase secrets.
+pattern='(sk|rk)_(live|test)_[0-9A-Za-z]{10,}|whsec_[0-9A-Za-z]{10,}|sk-ant-[0-9A-Za-z_-]{10,}|eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[0-9A-Za-z_-]{20,}'
+if git diff --cached -U0 --no-color | grep -E '^\+' | grep -Eq "$pattern"; then
+  echo "✋ Commit bloqué : une clé secrète semble présente dans les fichiers ajoutés."
+  echo "   Mettez-la dans .env.local ou dans les variables d'environnement de Vercel."
+  exit 1
+fi
