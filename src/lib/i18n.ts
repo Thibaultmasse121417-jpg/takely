@@ -52,7 +52,7 @@ const fr = {
     refunded: "La génération a échoué. Les crédits non utilisés ont été remboursés.",
     music: "Musique", formats: "Formats", downloadAll: "Tous les formats", feed: "Feed", story: "Story / Reels", square: "Carré", wide: "YouTube",
   },
-  login: { title: "Connexion", sub: "Recevez un lien de connexion par e-mail.", email: "Adresse e-mail", send: "Envoyer le lien", sent: "C'est envoyé. Ouvrez le lien reçu par e-mail." },
+  login: { title: "Connexion", sub: "Recevez un lien de connexion par e-mail.", email: "Adresse e-mail", send: "Envoyer le lien", sent: "C'est envoyé. Ouvrez le lien reçu par e-mail (pensez à regarder dans les spams).", signingIn: "Connexion en cours…", linkInvalid: "Ce lien de connexion n'est plus valable.", linkHelp: "Un lien ne sert qu'une fois et expire au bout d'une heure. Demandez-en un nouveau et ouvrez le dernier mail reçu.", retry: "Recevoir un nouveau lien" },
   billing: { title: "Recharger des crédits", balance: "Solde actuel", success: "Paiement reçu, vos crédits arrivent.", },
 };
 
@@ -108,7 +108,7 @@ const en: Dict = {
     refunded: "Generation failed. Unused credits were refunded.",
     music: "Music", formats: "Formats", downloadAll: "All formats", feed: "Feed", story: "Story / Reels", square: "Square", wide: "YouTube",
   },
-  login: { title: "Log in", sub: "Get a sign-in link by email.", email: "Email address", send: "Send link", sent: "Sent. Open the link in your inbox." },
+  login: { title: "Log in", sub: "Get a sign-in link by email.", email: "Email address", send: "Send link", sent: "Sent. Open the link in your inbox (check spam too).", signingIn: "Signing you in…", linkInvalid: "This sign-in link is no longer valid.", linkHelp: "A link works once and expires after an hour. Ask for a new one and open the latest email.", retry: "Get a new link" },
   billing: { title: "Top up credits", balance: "Current balance", success: "Payment received, your credits are on their way." },
 };
 
