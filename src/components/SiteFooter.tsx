@@ -6,8 +6,8 @@ import type { Dict, Locale } from "@/lib/i18n";
 export function SiteFooter({ t, locale }: { t: Dict; locale: Locale }) {
   const f = t.home.footer;
   const cols: { title: string; links: [string, string][] }[] = [
-    { title: f.product, links: [[f.links.ads, "/#create"], [f.links.studio, "/#studio"], [f.links.pricing, "/pricing"], [f.links.login, "/login"]] },
-    { title: f.company, links: [[f.links.business, "/#for"], [f.links.contact, "/legal#mentions"]] },
+    { title: f.product, links: [[f.links.ads, "/app"], [f.links.studio, "/app?mode=video"], [f.links.pricing, "/pricing"], [f.links.login, "/login"]] },
+    { title: f.company, links: [[f.links.business, "/#faq"], [f.links.contact, "/legal#mentions"]] },
     { title: f.legal, links: [[f.links.legal, "/legal#mentions"], [f.links.terms, "/legal#cgv"], [f.links.privacy, "/legal#confidentialite"]] },
   ];
   return (

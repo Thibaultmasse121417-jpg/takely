@@ -20,7 +20,7 @@ export function BuyButton({
       <button
         type="button"
         disabled={busy}
-        className={`w-full ${primary ? "btn-primary" : "btn-ghost"}`}
+        className={`w-full ${primary ? "btn-white" : "btn-ghost"}`}
         onClick={async () => {
           setBusy(true);
           setError("");

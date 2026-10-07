@@ -11,15 +11,15 @@ export function SiteHeader({ t, locale }: { t: Dict; locale: Locale }) {
         <div className="flex items-center gap-10">
           <Logo />
           <nav aria-label="Main" className="hidden items-center gap-7 text-[14px] text-muted lg:flex">
-            <Link href="/#create" className="hover:text-text">{n.ads}</Link>
-            <Link href="/#studio" className="hover:text-text">{n.studio}</Link>
+            <Link href="/#produits" className="hover:text-text">{n.ads}</Link>
+            <Link href="/#exemples" className="hover:text-text">{n.studio}</Link>
             <Link href="/pricing" className="hover:text-text">{n.pricing}</Link>
-            <Link href="/#for" className="hover:text-text">{n.business}</Link>
+            <Link href="/#faq" className="hover:text-text">{n.business}</Link>
           </nav>
         </div>
         <div className="flex items-center gap-2">
           <div className="hidden sm:block"><LangSwitch locale={locale} /></div>
-          <Link href="/login" className="hidden px-3 py-2.5 text-[14px] text-text hover:text-accent sm:inline-flex">{t.nav.login}</Link>
+          <Link href="/login" className="hidden px-3 py-2.5 text-[14px] text-text hover:text-muted sm:inline-flex">{t.nav.login}</Link>
           <Link href="/app" className="inline-flex h-10 items-center rounded-full bg-text px-4 text-[14px] font-medium text-ink hover:opacity-90">
             {n.start}
           </Link>

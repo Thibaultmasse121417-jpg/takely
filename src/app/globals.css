@@ -62,3 +62,13 @@ body {
 }
 .display { font-size: clamp(44px, 8.2vw, 128px); line-height: 0.95; letter-spacing: -0.05em; font-weight: 600; }
 .h2 { font-size: clamp(32px, 4.4vw, 60px); line-height: 1.02; letter-spacing: -0.04em; font-weight: 600; text-wrap: balance; }
+.btn-white {
+  @apply inline-flex items-center justify-center gap-2 rounded-full bg-text px-5 py-3 text-sm font-medium text-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40;
+}
+@keyframes drift { to { transform: scale(1.12) translateX(-2%); } }
+.drift { transform: scale(1.04); animation: drift 18s ease-in-out infinite alternate; }
+@keyframes pulse-dot { 50% { opacity: 0.3; } }
+.pulse-dot { animation: pulse-dot 1.4s infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .drift, .pulse-dot { animation: none; }
+}

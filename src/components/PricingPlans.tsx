@@ -44,7 +44,7 @@ export function PricingPlans({
             className={`flex h-10 items-center gap-2 rounded-full px-5 text-sm transition-colors ${interval === iv ? "bg-text text-ink" : "text-muted hover:text-text"}`}
           >
             {iv === "month" ? t.monthly : t.yearly}
-            {iv === "year" && <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${interval === iv ? "bg-accent text-ink" : "bg-accent/15 text-accent"}`}>{t.save}</span>}
+            {iv === "year" && <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${interval === iv ? "bg-ink/10 text-ink" : "bg-white/10 text-text"}`}>{t.save}</span>}
           </button>
         ))}
       </div>
@@ -77,10 +77,10 @@ export function PricingPlans({
           return (
             <article
               key={p.id}
-              className={`relative flex flex-col gap-5 rounded-3xl border p-6 ${p.popular ? "border-accent/70 bg-[#13150f]" : "border-line-soft bg-[#111113]"}`}
+              className={`relative flex flex-col gap-5 rounded-3xl border p-6 ${p.popular ? "border-text bg-[#151515]" : "border-line-soft bg-[#111113]"}`}
             >
               {p.popular && (
-                <span className="absolute right-5 top-5 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-ink">{t.popular}</span>
+                <span className="absolute right-5 top-5 rounded-full border border-line px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.06em] text-muted">{t.popular}</span>
               )}
               <div className="flex flex-col gap-1">
                 <h3 className="text-lg font-semibold">{p.name}</h3>
@@ -102,9 +102,9 @@ export function PricingPlans({
                 {t.features[p.id].map((f) => <Feature key={f} text={f} />)}
               </ul>
               {mode === "public" ? (
-                <Link href="/app/billing" className={p.popular ? "btn-primary" : "btn-ghost"}>{fill(t.subscribe, { plan: p.name })}</Link>
+                <Link href="/app/billing" className={p.popular ? "btn-white" : "btn-ghost"}>{fill(t.subscribe, { plan: p.name })}</Link>
               ) : isCurrent ? (
-                <span className="rounded-full border border-accent py-2.5 text-center text-sm text-accent">{t.current}</span>
+                <span className="rounded-full border border-text py-2.5 text-center text-sm text-text">{t.current}</span>
               ) : (
                 <BuyButton
                   payload={{ plan: p.id, interval }}
@@ -123,7 +123,7 @@ export function PricingPlans({
 function Feature({ text }: { text: string }) {
   return (
     <li className="flex gap-2.5">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
       <span>{text}</span>
     </li>
   );
