@@ -2,11 +2,12 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseServiceKey } from "@/lib/env";
 
 /** Supabase client acting as the signed-in user (RLS applies). */
 export async function supabaseServer() {
   const store = await cookies();
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll: () => store.getAll(),
       setAll: (list) => {
@@ -25,7 +26,7 @@ export function supabaseAdmin() {
   // Test seam: the pipeline test injects an in-memory database here.
   const injected = (globalThis as { __takelyTestAdmin?: unknown }).__takelyTestAdmin;
   if (injected) return injected as ReturnType<typeof createClient>;
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  return createClient(SUPABASE_URL, supabaseServiceKey(), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

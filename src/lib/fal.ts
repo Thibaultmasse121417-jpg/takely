@@ -12,7 +12,7 @@ export function falQueue(): Queue {
   return (globalThis as { __takelyTestFal?: Queue }).__takelyTestFal ?? fal.queue;
 }
 
-const secret = () => process.env.WEBHOOK_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || "dev";
+const secret = () => process.env.WEBHOOK_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "dev";
 
 /** Signs a generation id so the fal webhook can't be spoofed by anyone who guesses ids. */
 export function signGeneration(id: string): string {
@@ -26,8 +26,10 @@ export function verifyGeneration(id: string, token: string | null): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+/** Public URL of the app: NEXT_PUBLIC_APP_URL, else the Vercel production domain, else localhost. */
 export function appUrl(): string {
-  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  return (process.env.NEXT_PUBLIC_APP_URL || (vercel ? `https://${vercel}` : "http://localhost:3000")).replace(/\/$/, "");
 }
 
 /** Webhooks only work when fal can reach us (deployed). Locally we fall back to polling. */

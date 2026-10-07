@@ -1,4 +1,4 @@
--- Takely — full database setup (paste once in Supabase › SQL Editor › Run).
+-- Takely — full database setup (paste once in Supabase › SQL Editor › Run). Not needed when POSTGRES_URL_NON_POOLING is set: the build applies migrations itself.
 
 -- ===== supabase/migrations/0001_init.sql =====
 -- Takely — initial schema. Run in the Supabase SQL editor (or `supabase db push`).
@@ -158,4 +158,14 @@ alter table public.generations add constraint generations_role_check
 -- Finished videos in every format (public so they can be downloaded and shared).
 insert into storage.buckets (id, name, public) values ('outputs', 'outputs', true)
 on conflict (id) do nothing;
+
+-- ===== supabase/migrations/0004_app_settings.sql =====
+-- Takely — private key/value settings written by the server (e.g. the Stripe webhook
+-- signing secret created automatically). RLS on with no policy: only the service role reads it.
+create table if not exists public.app_settings (
+  key text primary key,
+  value text not null,
+  updated_at timestamptz not null default now()
+);
+alter table public.app_settings enable row level security;
 

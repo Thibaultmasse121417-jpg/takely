@@ -1,6 +1,8 @@
 import "server-only";
 import Stripe from "stripe";
 import { PACKS, PLANS } from "./billing";
+import { appUrl } from "./fal";
+import { ensureCatalog, ensureWebhook } from "./stripe-catalog";
 import { supabaseAdmin } from "./supabase/server";
 
 let client: Stripe | null = null;
@@ -21,15 +23,22 @@ export const INTEGRATION_ID = "takely-web-checkout-qmvhrtza";
 export const automaticTax = () => process.env.STRIPE_AUTOMATIC_TAX === "true";
 
 let priceCache: { at: number; byKey: Map<string, Stripe.Price> } | null = null;
+const ALL_KEYS = [...PLANS, ...PACKS].map((x) => x.lookupKey);
 
-/** Prices of the catalogue, by lookup key (cached 10 minutes). */
+async function fetchPrices() {
+  const res = await stripe().prices.list({ lookup_keys: ALL_KEYS, active: true, limit: 100 });
+  return new Map(res.data.map((p) => [p.lookup_key!, p]));
+}
+
+/** Prices of the catalogue, by lookup key (cached 10 minutes; created on first use if missing). */
 export async function catalogPrices(): Promise<Map<string, Stripe.Price>> {
   if (priceCache && Date.now() - priceCache.at < 10 * 60 * 1000) return priceCache.byKey;
-  const keys = [...PLANS, ...PACKS].map((x) => x.lookupKey);
-  const res = await stripe().prices.list({ lookup_keys: keys, active: true, limit: 100 });
-  const byKey = new Map(res.data.map((p) => [p.lookup_key!, p]));
-  const missing = keys.filter((k) => !byKey.has(k));
-  if (missing.length) throw new Error(`Stripe catalogue incomplete (${missing.join(", ")}): run npm run stripe:setup`);
+  let byKey = await fetchPrices();
+  if (ALL_KEYS.some((k) => !byKey.has(k))) {
+    await ensureCatalog(stripe(), appUrl());
+    portalConfig = undefined;
+    byKey = await fetchPrices();
+  }
   priceCache = { at: Date.now(), byKey };
   return byKey;
 }
@@ -67,11 +76,42 @@ export async function userForCustomer(customerId: string | null | undefined): Pr
 }
 
 let portalConfig: string | null | undefined;
-/** The portal configuration created by `npm run stripe:setup` (plan switching enabled). */
+/** The portal configuration with plan switching (created with the catalogue). */
 export async function portalConfigurationId(): Promise<string | undefined> {
   if (portalConfig === undefined) {
     const list = await stripe().billingPortal.configurations.list({ limit: 100, active: true });
     portalConfig = list.data.find((c) => c.metadata?.takely === "true")?.id ?? null;
+    if (!portalConfig) portalConfig = (await ensureCatalog(stripe(), appUrl())).portalConfigurationId;
   }
   return portalConfig ?? undefined;
+}
+
+const SECRET_KEY = "stripe_webhook_secret";
+
+/** Webhook signing secret: STRIPE_WEBHOOK_SECRET, or the one saved when the app created the endpoint. */
+export async function webhookSecret(): Promise<string | null> {
+  if (process.env.STRIPE_WEBHOOK_SECRET) return process.env.STRIPE_WEBHOOK_SECRET;
+  const { data } = await supabaseAdmin().from("app_settings").select("value").eq("key", SECRET_KEY).maybeSingle();
+  return data?.value ?? null;
+}
+
+let ready = false;
+/**
+ * First use of Stripe on a fresh deployment: creates the catalogue, the portal settings and
+ * (unless STRIPE_WEBHOOK_SECRET is set) the webhook endpoint, saving its secret privately.
+ */
+export async function ensureStripeReady() {
+  if (ready) return;
+  await catalogPrices();
+  await portalConfigurationId();
+  const url = appUrl();
+  if (!process.env.STRIPE_WEBHOOK_SECRET && !url.includes("localhost")) {
+    const secret = await ensureWebhook(stripe(), url, !!(await webhookSecret()));
+    if (secret) {
+      await supabaseAdmin()
+        .from("app_settings")
+        .upsert({ key: SECRET_KEY, value: secret, updated_at: new Date().toISOString() });
+    }
+  }
+  ready = true;
 }

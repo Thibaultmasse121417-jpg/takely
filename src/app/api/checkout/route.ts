@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { PACKS, PLANS } from "@/lib/billing";
 import { appUrl } from "@/lib/fal";
-import { INTEGRATION_ID, automaticTax, customerFor, portalConfigurationId, priceIdFor, stripe } from "@/lib/stripe";
+import { INTEGRATION_ID, automaticTax, customerFor, ensureStripeReady, portalConfigurationId, priceIdFor, stripe } from "@/lib/stripe";
 import { requireUser, supabaseAdmin } from "@/lib/supabase/server";
 
 /**
@@ -20,6 +20,7 @@ export async function POST(req: Request) {
   if (!plan && !pack) return NextResponse.json({ error: "unknown_product" }, { status: 400 });
 
   try {
+    await ensureStripeReady();
     const s = stripe();
     const customer = await customerFor(user.id, user.email);
     const back = `${appUrl()}/app/billing`;

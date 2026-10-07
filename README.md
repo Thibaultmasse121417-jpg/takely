@@ -38,7 +38,7 @@ Simule une base de données et fal.ai, mais fait le vrai montage ffmpeg : pub de
 
 ## Mise en route
 
-1. **Supabase** : créez un projet (ou ajoutez l'intégration Supabase dans Vercel), puis collez `supabase/setup.sql` dans le SQL Editor et cliquez sur Run. Dans Authentication › URL Configuration, ajoutez `https://VOTRE-DOMAINE/auth/callback` (et `http://localhost:3000/auth/callback`).
+1. **Supabase** : ajoutez l'intégration Supabase dans Vercel. Les migrations s'appliquent toutes seules à chaque build (`scripts/migrate.mts`, via `POSTGRES_URL_NON_POOLING`). Sans cette variable, collez `supabase/setup.sql` dans le SQL Editor. Dans Authentication › URL Configuration, mettez l'adresse du site en Site URL. Dans Authentication › URL Configuration, ajoutez `https://VOTRE-DOMAINE/auth/callback` (et `http://localhost:3000/auth/callback`).
 2. **Clés** : copiez `.env.example` en `.env.local` et remplissez-le (Supabase, fal.ai, Anthropic, Stripe, `WEBHOOK_SECRET`).
 3. **Stripe** (voir la section Stripe ci-dessous) : `npm run stripe:setup`, puis le webhook.
 4. Lancez :
@@ -61,8 +61,8 @@ Intégration revue selon les bonnes pratiques Stripe (plugin officiel) :
 
 Mise en place :
 
-1. Créez les produits et le portail : `STRIPE_SECRET_KEY=sk_test_… npm run stripe:setup` (relancez avec la clé live avant le lancement).
-2. Webhook : Dashboard › Developers › Webhooks › endpoint `https://VOTRE-DOMAINE/api/webhooks/stripe` avec `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Copiez le secret `whsec_…` dans `STRIPE_WEBHOOK_SECRET`.
+1. **Rien à faire au départ** : au premier paiement, l'app crée elle-même les produits, le portail client et le webhook Stripe (son secret est gardé dans la table privée `app_settings`). `npm run stripe:setup` permet de le faire à l'avance, par exemple avec la clé live.
+2. Webhook manuel (optionnel, si vous préférez) : endpoint `https://VOTRE-DOMAINE/api/webhooks/stripe` avec `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Copiez le secret `whsec_…` dans `STRIPE_WEBHOOK_SECRET` : il remplace alors le webhook automatique.
 3. En production, utilisez une **clé restreinte** (`rk_…`) avec les permissions listées dans `.env.example`, marquée « Sensitive » dans Vercel.
 4. **TVA** : laissez `STRIPE_AUTOMATIC_TAX=false` tant qu'aucune immatriculation TVA n'est active dans Stripe Tax (Dashboard › Tax › Registrations) ; sinon Stripe ne collecte rien sans erreur. Une fois active, passez-la à `true` (adresse de facturation et n° de TVA intracommunautaire demandés au paiement).
 5. Un hook git (`.githooks/pre-commit`) bloque tout commit contenant une clé `sk_`/`rk_`/`whsec_`/Anthropic/Supabase.

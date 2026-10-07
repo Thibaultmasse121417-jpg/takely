@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { packByLookupKey, PACKS, planByLookupKey } from "@/lib/billing";
-import { lookupKeyForPrice, stripe, userForCustomer } from "@/lib/stripe";
+import { lookupKeyForPrice, stripe, userForCustomer, webhookSecret } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { addCredits } from "@/lib/jobs";
 
@@ -19,9 +19,12 @@ export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature");
   const raw = await req.text();
 
+  const secret = await webhookSecret();
+  if (!secret) return NextResponse.json({ error: "webhook_not_configured" }, { status: 500 });
+
   let event: Stripe.Event;
   try {
-    event = stripe().webhooks.constructEvent(raw, sig ?? "", process.env.STRIPE_WEBHOOK_SECRET!);
+    event = stripe().webhooks.constructEvent(raw, sig ?? "", secret);
   } catch {
     return NextResponse.json({ error: "bad_signature" }, { status: 400 });
   }
