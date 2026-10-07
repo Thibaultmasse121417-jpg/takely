@@ -48,3 +48,17 @@ body {
 .label-mono {
   @apply font-mono text-[11px] uppercase tracking-[0.08em] text-faint;
 }
+
+/* Hero storyboard reel */
+@keyframes reel { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.reel-track { animation: reel 40s linear infinite; }
+.reel-scan {
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 4px);
+}
+@keyframes caret { 50% { opacity: 0; } }
+.typing::after { content: ""; display: inline-block; width: 2px; height: 1.05em; margin-left: 3px; vertical-align: -0.15em; background: var(--color-accent); animation: caret 1s steps(1) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .reel-track, .typing::after { animation: none; }
+}
+.display { font-size: clamp(44px, 8.2vw, 128px); line-height: 0.95; letter-spacing: -0.05em; font-weight: 600; }
+.h2 { font-size: clamp(32px, 4.4vw, 60px); line-height: 1.02; letter-spacing: -0.04em; font-weight: 600; text-wrap: balance; }

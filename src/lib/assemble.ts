@@ -9,6 +9,7 @@ import { AD } from "./models";
 import { cropFilter, derivableFormats } from "./formats";
 import { montageArgs } from "./montage";
 import { supabaseAdmin } from "./supabase/server";
+import { userLimits } from "./plan";
 import type { AdRow, GenRow } from "./jobs";
 
 const run = promisify(execFile);
@@ -53,8 +54,10 @@ export async function assembleAd(adId: string) {
     if (voice) await download(voiceUrl!, voice);
     if (music) await download(musicUrl!, music);
 
+    // Free plan: "Made with takely" in the corner.
+    const watermark = (await userLimits(ad.user_id)).watermark ? join(process.cwd(), "src/assets/watermark.png") : null;
     const master = join(dir, "master.mp4");
-    await run(ffmpeg(), montageArgs({ clips, voice, music, aspect: ad.aspect, clipSeconds: AD.clipSeconds, out: master }), {
+    await run(ffmpeg(), montageArgs({ clips, voice, music, watermark, aspect: ad.aspect, clipSeconds: AD.clipSeconds, out: master }), {
       timeout: 180_000,
       maxBuffer: 1 << 24,
     });

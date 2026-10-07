@@ -5,6 +5,7 @@ import { AD_LANGUAGES } from "@/lib/i18n";
 import { planAd } from "@/lib/planner";
 import { requireUser, supabaseAdmin } from "@/lib/supabase/server";
 import { addCredits, failAd, spendCredits, startAdShoot, type AdRow } from "@/lib/jobs";
+import { userLimits } from "@/lib/plan";
 
 export const maxDuration = 300;
 
@@ -30,13 +31,14 @@ export async function POST(req: Request) {
   const id = crypto.randomUUID();
   const cost = adCost(b.duration, b.voiceover, b.music);
 
-  // At most 3 ads in production at once per account.
+  // Ads in production at once depend on the plan.
+  const limits = await userLimits(user.id);
   const { count } = await admin
     .from("ads")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
     .in("status", ["planning", "shooting", "assembling"]);
-  if ((count ?? 0) >= 3) return NextResponse.json({ error: "too_many_running" }, { status: 429 });
+  if ((count ?? 0) >= limits.parallelAds) return NextResponse.json({ error: "too_many_running" }, { status: 429 });
 
   if (!(await spendCredits(admin, user.id, cost, "ad", `ad:${id}`))) {
     return NextResponse.json({ error: "not_enough_credits" }, { status: 402 });

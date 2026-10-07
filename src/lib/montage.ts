@@ -8,6 +8,8 @@ export function montageArgs(opts: {
   clips: string[];
   voice?: string | null;
   music?: string | null;
+  /** PNG burned in the bottom-right corner (free plan). */
+  watermark?: string | null;
   aspect: string;
   clipSeconds: number;
   out: string;
@@ -20,8 +22,10 @@ export function montageArgs(opts: {
   let idx = n;
   const voiceIdx = opts.voice ? idx++ : -1;
   const musicIdx = opts.music ? idx++ : -1;
+  const wmIdx = opts.watermark ? idx : -1;
   if (opts.voice) args.push("-i", opts.voice);
   if (opts.music) args.push("-i", opts.music);
+  if (opts.watermark) args.push("-i", opts.watermark);
 
   const f: string[] = [];
   for (let i = 0; i < n; i++) {
@@ -32,8 +36,14 @@ export function montageArgs(opts: {
   }
   f.push(
     `${Array.from({ length: n }, (_, i) => `[v${i}]`).join("")}concat=n=${n}:v=1:a=0,` +
-      `fade=t=in:st=0:d=0.3,fade=t=out:st=${(T - 0.6).toFixed(2)}:d=0.6[vout]`,
+      `fade=t=in:st=0:d=0.3,fade=t=out:st=${(T - 0.6).toFixed(2)}:d=0.6${opts.watermark ? "[vcut]" : "[vout]"}`,
   );
+  if (opts.watermark) {
+    const wmW = Math.round(Math.min(W, H) * 0.42);
+    const margin = Math.round(Math.min(W, H) * 0.04);
+    f.push(`[${wmIdx}:v]scale=${wmW}:-1[wm]`);
+    f.push(`[vcut][wm]overlay=W-w-${margin}:H-h-${margin}[vout]`);
+  }
 
   const fadeOut = `afade=t=out:st=${Math.max(0, T - 1.5).toFixed(2)}:d=1.5`;
   let audio: string | null = null;

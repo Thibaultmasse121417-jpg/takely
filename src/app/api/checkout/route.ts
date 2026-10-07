@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { PACKS, PLANS } from "@/lib/billing";
+import { PACKS, PLANS, lookupKey } from "@/lib/billing";
 import { appUrl } from "@/lib/fal";
 import { INTEGRATION_ID, automaticTax, customerFor, ensureStripeReady, portalConfigurationId, priceIdFor, stripe } from "@/lib/stripe";
 import { requireUser, supabaseAdmin } from "@/lib/supabase/server";
@@ -14,7 +14,8 @@ export async function POST(req: Request) {
   const { user } = await requireUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const body = (await req.json().catch(() => ({}))) as { plan?: string; pack?: string };
+  const body = (await req.json().catch(() => ({}))) as { plan?: string; pack?: string; interval?: string };
+  const interval = body.interval === "year" ? "year" : "month";
   const plan = body.plan ? PLANS.find((p) => p.id === body.plan) : undefined;
   const pack = body.pack ? PACKS.find((p) => p.id === body.pack) : undefined;
   if (!plan && !pack) return NextResponse.json({ error: "unknown_product" }, { status: 400 });
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       mode: plan ? "subscription" : "payment",
       customer,
       client_reference_id: user.id,
-      line_items: [{ price: await priceIdFor((plan ?? pack)!.lookupKey), quantity: 1 }],
+      line_items: [{ price: await priceIdFor(plan ? lookupKey(plan.id, interval) : pack!.lookupKey), quantity: 1 }],
       ...(plan
         ? { subscription_data: { metadata: { user_id: user.id } } }
         : { metadata: { user_id: user.id, pack: pack!.id }, invoice_creation: { enabled: true } }),

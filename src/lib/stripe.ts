@@ -1,8 +1,7 @@
 import "server-only";
 import Stripe from "stripe";
-import { PACKS, PLANS } from "./billing";
 import { appUrl } from "./fal";
-import { ensureCatalog, ensureWebhook } from "./stripe-catalog";
+import { ALL_LOOKUP_KEYS, ensureCatalog, ensureWebhook } from "./stripe-catalog";
 import { supabaseAdmin } from "./supabase/server";
 
 let client: Stripe | null = null;
@@ -23,7 +22,7 @@ export const INTEGRATION_ID = "takely-web-checkout-qmvhrtza";
 export const automaticTax = () => process.env.STRIPE_AUTOMATIC_TAX === "true";
 
 let priceCache: { at: number; byKey: Map<string, Stripe.Price> } | null = null;
-const ALL_KEYS = [...PLANS, ...PACKS].map((x) => x.lookupKey);
+const ALL_KEYS = ALL_LOOKUP_KEYS;
 
 async function fetchPrices() {
   const res = await stripe().prices.list({ lookup_keys: ALL_KEYS, active: true, limit: 100 });

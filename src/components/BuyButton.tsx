@@ -16,11 +16,11 @@ export function BuyButton({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   return (
-    <div className="mt-2 flex flex-col gap-2">
+    <div className="flex flex-col gap-2">
       <button
         type="button"
         disabled={busy}
-        className={primary ? "btn-primary" : "btn-ghost"}
+        className={`w-full ${primary ? "btn-primary" : "btn-ghost"}`}
         onClick={async () => {
           setBusy(true);
           setError("");

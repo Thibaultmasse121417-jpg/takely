@@ -71,10 +71,21 @@ Test : carte `4242 4242 4242 4242`, n'importe quelle date future et CVC. Échec 
 
 ## Offres
 
-- **Abonnements** (`src/lib/billing.ts`) : Starter 19 €/mois (200 crédits), Pro 49 €/mois (600), Agency 149 €/mois (2000). Les crédits sont versés à chaque facture payée et se cumulent.
-- **Recharges** : 100 crédits 10 €, 300 crédits 27 €, 1000 crédits 85 €.
-- **Coûts visés** : chaque modèle est tarifé pour que le coût fal.ai reste autour de 35 % du prix payé (≈ 65 % de marge brute). Les pubs utilisent Kling 2.5 Turbo Pro (environ 0,35 $ le plan de 5 s). Modèles vérifiés sur la documentation fal.ai le 7 octobre 2026.
-- Changer d'offre : depuis le portail client Stripe. La nouvelle offre démarre au renouvellement suivant, avec ses crédits.
+Structure inspirée des studios IA du marché (`src/lib/billing.ts`, page `/pricing`) :
+
+| Offre | Mensuel | Annuel (-20 %) | Crédits |
+|---|---|---|---|
+| Gratuit | 0 € | — | 60 une fois (≈ 1 pub de 15 s), filigrane « Made with takely » |
+| Standard | 19 € | 15 €/mois (180 €/an) | 250 / mois |
+| Pro | 49 € | 39 €/mois (468 €/an) | 700 / mois |
+| Max | 129 € | 103 €/mois (1 236 €/an) | 2 000 / mois |
+
+- Recharges ponctuelles : 100 crédits 10 €, 300 crédits 27 €, 1000 crédits 85 €.
+- Limites par offre (pubs et générations simultanées, filigrane) : `PLAN_LIMITS`.
+- Annuel : les crédits des 12 mois sont versés au paiement. Les crédits ne périment pas.
+- Coûts visés : environ 35 % du prix payé en coûts IA (≈ 60–70 % de marge brute). Les pubs utilisent Kling 2.5 Turbo Pro (environ 0,35 $ le plan de 5 s). Modèles vérifiés sur la documentation fal.ai le 7 octobre 2026.
+- Changer d'offre : depuis le portail client Stripe ; la nouvelle offre démarre au renouvellement suivant, avec ses crédits.
+- Vidéo d'accueil : mettez l'URL d'une vraie pub faite avec Takely dans `NEXT_PUBLIC_HERO_VIDEO_URL` pour remplacer l'animation du storyboard.
 
 ## À ajuster avant la mise en ligne
 

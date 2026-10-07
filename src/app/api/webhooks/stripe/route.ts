@@ -77,10 +77,11 @@ async function handle(event: Stripe.Event) {
       let credits = 0;
       let planId: string | null = null;
       for (const line of invoice.lines.data) {
-        const plan = planByLookupKey(await lookupKeyForPrice(idOf(line.pricing?.price_details?.price)));
-        if (plan && line.amount >= 0) {
-          credits += plan.monthlyCredits * (line.quantity ?? 1);
-          planId = plan.id;
+        const found = planByLookupKey(await lookupKeyForPrice(idOf(line.pricing?.price_details?.price)));
+        if (found && line.amount >= 0) {
+          // Yearly plans get the whole year of credits with the yearly invoice.
+          credits += found.plan.monthlyCredits * (found.interval === "year" ? 12 : 1) * (line.quantity ?? 1);
+          planId = found.plan.id;
         }
       }
       if (credits > 0) await addCredits(sb, userId, credits, `subscription:${planId}`, `stripe-invoice:${invoice.id}`);
@@ -103,7 +104,7 @@ async function handle(event: Stripe.Event) {
       const userId = sub.metadata?.user_id ?? (await userForCustomer(idOf(sub.customer)));
       if (!userId) throw new Error(`no user for subscription ${sub.id}`);
       const item = sub.items.data[0];
-      const plan = planByLookupKey(item?.price?.lookup_key ?? (await lookupKeyForPrice(item?.price?.id)));
+      const plan = planByLookupKey(item?.price?.lookup_key ?? (await lookupKeyForPrice(item?.price?.id)))?.plan;
       const ended = event.type === "customer.subscription.deleted" || sub.status === "canceled";
       await sb
         .from("profiles")

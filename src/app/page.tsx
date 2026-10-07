@@ -1,161 +1,180 @@
 import Link from "next/link";
-import { Logo } from "@/components/Logo";
-import { LangSwitch } from "@/components/LangSwitch";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { HeroReel } from "@/components/HeroReel";
+import { PricingPlans } from "@/components/PricingPlans";
 import { getServerDict } from "@/lib/locale";
 import { AD_LANGUAGES } from "@/lib/i18n";
-import { PACKS, PLANS, formatPrice } from "@/lib/billing";
 
-const EXAMPLES = [
-  { tag: "COFFEE", tone: "#1c1c1f" },
-  { tag: "SKINCARE", tone: "#201f1c" },
-  { tag: "SNEAKERS", tone: "#1a1d1f" },
-  { tag: "FRAGRANCE", tone: "#1e1c20" },
-  { tag: "HOME", tone: "#1c1f1c" },
-];
+const MODELS = ["Kling 3.0", "Veo 3.1", "Seedance", "FLUX", "Nano Banana", "ElevenLabs", "Claude"];
+const CREATE_MODES = ["ad", "video", "image"] as const;
 
 export default async function Home() {
   const { locale, t } = await getServerDict();
+  const h = t.home;
 
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-5 sm:px-8">
-        <Logo />
-        <nav aria-label="Main" className="hidden gap-7 text-sm text-muted md:flex">
-          <a href="#how" className="hover:text-text">{t.nav.how}</a>
-          <a href="#tools" className="hover:text-text">{t.nav.tools}</a>
-          <a href="#pricing" className="hover:text-text">{t.nav.pricing}</a>
-        </nav>
-        <div className="flex items-center gap-2">
-          <LangSwitch locale={locale} />
-          <Link href="/login" className="hidden px-4 py-2.5 text-sm sm:inline-flex">{t.nav.login}</Link>
-          <Link href="/app" className="inline-flex rounded-full bg-text px-5 py-2.5 text-sm font-medium text-ink hover:opacity-90">{t.nav.start}</Link>
-        </div>
-      </header>
+      <SiteHeader t={t} locale={locale} />
 
-      <section className="mx-auto flex max-w-7xl flex-col items-center gap-7 px-6 pb-16 pt-20 text-center sm:px-8 sm:pt-28">
-        <div className="rounded-full border border-line px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted">{t.hero.badge}</div>
-        <h1 className="max-w-5xl text-[clamp(42px,7vw,88px)] font-semibold leading-[1] tracking-[-0.045em]">
-          {t.hero.title1}
-          <br />
-          {t.hero.title2}
-        </h1>
-        <p className="max-w-2xl text-lg text-muted">{t.hero.sub}</p>
-
-        <Link href="/app" className="mt-3 flex w-full max-w-3xl flex-col gap-3.5 rounded-[20px] border border-line bg-panel p-4 text-left transition-colors hover:border-faint">
-          <div className="flex items-start gap-3.5">
-            <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-xl border border-[#333338] bg-[#222226] font-mono text-[10px] text-faint">PHOTO</div>
-            <p className="pt-1 text-base text-[#e4e4e2]">{t.hero.demo}</p>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap gap-2 text-[13px] text-muted">
-              <span className="rounded-full border border-line px-3 py-1.5">30 s</span>
-              <span className="rounded-full border border-line px-3 py-1.5">9:16</span>
-              <span className="rounded-full border border-line px-3 py-1.5">{AD_LANGUAGES.find((l) => l.code === locale)?.name}</span>
-            </div>
-            <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-full bg-accent">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0c0c0d" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5" /><path d="M5 12l7-7 7 7" /></svg>
-            </span>
-          </div>
-        </Link>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 pb-24 sm:px-8">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {EXAMPLES.map((e) => (
-            <div key={e.tag} className="flex aspect-[9/16] flex-col justify-end rounded-2xl border border-line p-3.5" style={{ background: e.tone }}>
-              <span className="label-mono">{e.tag} · 9:16</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="how" className="border-t border-line-soft px-6 py-24 sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-12">
-          <h2 className="max-w-2xl text-[clamp(32px,4vw,48px)] font-semibold tracking-[-0.035em]">{t.how.title}</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            {[
-              [t.how.s1t, t.how.s1d],
-              [t.how.s2t, t.how.s2d],
-              [t.how.s3t, t.how.s3d],
-            ].map(([title, desc], i) => (
-              <div key={title} className="card flex flex-col gap-3 p-7">
-                <span className="font-mono text-xs text-accent">0{i + 1}</span>
-                <h3 className="text-xl font-semibold">{title}</h3>
-                <p className="text-[15px] text-muted">{desc}</p>
+      {/* Hero */}
+      <section className="px-5 pb-16 pt-16 sm:px-8 sm:pt-24">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-8">
+          <span className="label-mono text-accent">{h.eyebrow}</span>
+          <h1 className="display sm:whitespace-pre-line">{h.title}</h1>
+          <div className="flex flex-wrap items-end justify-between gap-8">
+            <p className="max-w-xl text-lg leading-relaxed text-muted">{h.sub}</p>
+            <div className="flex flex-col items-start gap-3">
+              <div className="flex flex-wrap gap-3">
+                <Link href="/app" className="inline-flex h-12 items-center rounded-full bg-text px-6 text-[15px] font-medium text-ink hover:opacity-90">{h.ctaPrimary}</Link>
+                <Link href="/pricing" className="inline-flex h-12 items-center rounded-full border border-line px-6 text-[15px] hover:border-faint">{h.ctaSecondary}</Link>
               </div>
-            ))}
+              <span className="text-[13px] text-faint">{h.freeNote}</span>
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="tools" className="border-t border-line-soft px-6 py-24 sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-12">
-          <h2 className="text-[clamp(32px,4vw,48px)] font-semibold tracking-[-0.035em]">{t.tools.title}</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            {[
-              [t.tools.ad, t.tools.adD, "ad"],
-              [t.tools.video, t.tools.videoD, "video"],
-              [t.tools.image, t.tools.imageD, "image"],
-            ].map(([title, desc, mode]) => (
-              <Link key={mode} href={`/app?mode=${mode}`} className="card flex flex-col gap-3 p-7 transition-colors hover:border-faint">
-                <h3 className="text-xl font-semibold">{title}</h3>
-                <p className="text-[15px] text-muted">{desc}</p>
+      <section className="px-3 sm:px-8">
+        <HeroReel t={h} />
+      </section>
+
+      {/* Models */}
+      <section className="px-5 py-14 sm:px-8">
+        <div className="mx-auto flex max-w-[1400px] flex-col items-center gap-6 text-center">
+          <span className="label-mono">{h.models}</span>
+          <div className="flex flex-wrap justify-center gap-x-10 gap-y-3 text-lg font-medium tracking-[-0.01em] text-muted">
+            {MODELS.map((m) => <span key={m}>{m}</span>)}
+          </div>
+        </div>
+      </section>
+
+      {/* Three ways to create */}
+      <section id="create" className="scroll-mt-20 px-5 py-20 sm:px-8">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-10">
+          <h2 className="h2">{h.createTitle}</h2>
+          <div id="studio" className="grid scroll-mt-20 gap-4 lg:grid-cols-3">
+            {h.create.map((c, i) => (
+              <Link key={c.tag} href={CREATE_MODES[i] === "ad" ? "/app" : `/app?mode=${CREATE_MODES[i]}`} className="group flex flex-col gap-5 rounded-3xl border border-line-soft bg-[#111113] p-3 transition-colors hover:border-line">
+                <div className="relative flex aspect-[4/3] items-end overflow-hidden rounded-2xl border border-line-soft p-4" style={{ background: ["#1b1a17", "#16191c", "#1b181d"][i] }}>
+                  <div className="reel-scan absolute inset-0" aria-hidden="true" />
+                  <CreateArt mode={CREATE_MODES[i]} />
+                </div>
+                <div className="flex flex-col gap-2 px-3 pb-4">
+                  <span className="label-mono text-accent">{c.tag}</span>
+                  <h3 className="text-2xl font-semibold tracking-[-0.02em]">{c.title}</h3>
+                  <p className="text-[15px] text-muted">{c.desc}</p>
+                  <span className="mt-2 text-sm text-text group-hover:text-accent">{c.cta} →</span>
+                </div>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="border-t border-line-soft px-6 py-24 sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-12">
-          <div className="flex flex-[1_1_380px] flex-col gap-4">
-            <h2 className="whitespace-pre-line text-[clamp(32px,4vw,48px)] font-semibold tracking-[-0.035em]">{t.langs.title}</h2>
-            <p className="max-w-md text-[17px] text-muted">{t.langs.sub}</p>
-          </div>
-          <div className="flex flex-[1_1_380px] flex-wrap gap-2">
-            {AD_LANGUAGES.slice(0, 14).map((l) => (
-              <span key={l.code} className="chip" data-on={l.code === locale}>{l.name}</span>
+      {/* How an ad is made: a real 4-step sequence */}
+      <section className="border-t border-line-soft px-5 py-20 sm:px-8">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-12">
+          <h2 className="h2 max-w-3xl">{h.stepsTitle}</h2>
+          <ol className="grid gap-px overflow-hidden rounded-3xl border border-line-soft bg-line-soft md:grid-cols-2 xl:grid-cols-4">
+            {h.steps.map((s, i) => (
+              <li key={s.t} className="flex flex-col gap-4 bg-ink p-7">
+                <span className="font-mono text-sm text-accent">{String(i + 1).padStart(2, "0")}</span>
+                <h3 className="text-xl font-semibold">{s.t}</h3>
+                <p className="text-[15px] leading-relaxed text-muted">{s.d}</p>
+              </li>
             ))}
-            <span className="chip">+ {AD_LANGUAGES.length - 14}</span>
-          </div>
+          </ol>
         </div>
       </section>
 
-      <section id="pricing" className="border-t border-line-soft px-6 py-24 sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-12">
-          <div className="flex flex-col gap-3">
-            <h2 className="text-[clamp(32px,4vw,48px)] font-semibold tracking-[-0.035em]">{t.pricing.title}</h2>
-            <p className="text-muted">{t.pricing.note}</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {PLANS.map((p) => (
-              <div key={p.id} className={`flex flex-col gap-4 rounded-2xl border p-7 ${p.popular ? "border-accent bg-[#141510]" : "border-line-soft"}`}>
-                <span className={`text-[15px] ${p.popular ? "text-accent" : "text-muted"}`}>{p.name}{p.popular ? ` · ${t.pricing.popular}` : ""}</span>
-                <span className="text-4xl font-semibold tracking-[-0.03em]">
-                  {formatPrice(p.priceCents, locale)}
-                  <span className="text-base font-normal text-muted"> {t.pricing.perMonth}</span>
-                </span>
-                <span className="text-[15px] text-muted">{p.monthlyCredits} {t.pricing.monthly}</span>
-                <Link href="/app/billing" className={p.popular ? "btn-primary mt-2" : "btn-ghost mt-2"}>{t.pricing.subscribe}</Link>
+      {/* Features */}
+      <section className="border-t border-line-soft px-5 py-20 sm:px-8">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-12">
+          <h2 className="h2 max-w-3xl">{h.featuresTitle}</h2>
+          <div className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {h.features.map((f) => (
+              <div key={f.t} className="flex flex-col gap-2 border-t border-line pt-5">
+                <h3 className="text-lg font-semibold">{f.t}</h3>
+                <p className="text-[15px] leading-relaxed text-muted">{f.d}</p>
               </div>
             ))}
           </div>
-          <p className="text-sm text-faint">
-            {t.pricing.cancel} {t.pricing.topups} {PACKS.map((p) => `${p.credits} ${t.pricing.credits} · ${formatPrice(p.priceCents, locale)}`).join("  |  ")}
-          </p>
+          <div className="flex flex-wrap gap-2">
+            {AD_LANGUAGES.map((l) => (
+              <span key={l.code} className="chip" data-on={l.code === locale}>{l.name}</span>
+            ))}
+          </div>
         </div>
       </section>
 
-      <footer className="border-t border-line-soft px-6 py-8 sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-4 text-[13px] text-faint">
-          <span>© {new Date().getFullYear()} takely</span>
-          <div className="flex gap-5">
-            <Link href="/legal#mentions" className="hover:text-text">{t.footer.legal}</Link>
-            <Link href="/legal#cgv" className="hover:text-text">{t.footer.terms}</Link>
-            <Link href="/legal#confidentialite" className="hover:text-text">{t.footer.privacy}</Link>
+      {/* For whom */}
+      <section id="for" className="scroll-mt-20 border-t border-line-soft px-5 py-20 sm:px-8">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-12">
+          <h2 className="h2">{h.forTitle}</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {h.for.map((f) => (
+              <div key={f.t} className="flex min-h-[200px] flex-col justify-between gap-6 rounded-3xl border border-line-soft bg-[#111113] p-6">
+                <h3 className="text-2xl font-semibold tracking-[-0.02em]">{f.t}</h3>
+                <p className="text-[15px] text-muted">{f.d}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </footer>
+      </section>
+
+      {/* Pricing */}
+      <section className="border-t border-line-soft px-5 py-20 sm:px-8">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-10">
+          <h2 className="h2 max-w-4xl">{h.pricingTitle}</h2>
+          <PricingPlans t={t.plans} locale={locale} mode="public" />
+          <Link href="/pricing" className="self-center text-sm text-muted hover:text-text">{h.compare} →</Link>
+        </div>
+      </section>
+
+      {/* Final call to action */}
+      <section className="px-3 pb-16 sm:px-8">
+        <div className="mx-auto flex max-w-[1400px] flex-col items-start gap-8 rounded-[28px] bg-accent px-6 py-14 text-ink sm:px-12 sm:py-20">
+          <h2 className="display max-w-5xl !text-[clamp(40px,6.4vw,96px)]">{h.finalTitle}</h2>
+          <Link href="/app" className="inline-flex h-12 items-center rounded-full bg-ink px-6 text-[15px] font-medium text-text hover:opacity-90">{h.ctaPrimary}</Link>
+        </div>
+      </section>
+
+      <SiteFooter t={t} locale={locale} />
+    </div>
+  );
+}
+
+/** Small, honest illustrations of each tool's interface (no fake results). */
+function CreateArt({ mode }: { mode: (typeof CREATE_MODES)[number] }) {
+  if (mode === "ad") {
+    return (
+      <div className="relative grid w-full grid-cols-4 gap-2">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex aspect-[9/16] flex-col justify-between rounded-lg border border-line bg-ink/60 p-1.5">
+            <span className="font-mono text-[9px] text-faint">0:{String(i * 5).padStart(2, "0")}</span>
+            <span className="h-1 w-full rounded-full bg-accent/70" style={{ opacity: i < 3 ? 1 : 0.25 }} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (mode === "video") {
+    return (
+      <div className="relative flex w-full flex-col gap-3">
+        <div className="aspect-video w-full rounded-lg border border-line bg-ink/60" />
+        <div className="flex items-center gap-2">
+          <span className="h-1.5 flex-1 rounded-full bg-line"><span className="block h-1.5 w-2/3 rounded-full bg-accent" /></span>
+          <span className="font-mono text-[10px] text-faint">0:05</span>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="relative grid w-full grid-cols-3 gap-2">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="aspect-square rounded-lg border border-line bg-ink/60" />
+      ))}
     </div>
   );
 }

@@ -5,9 +5,9 @@ const nextConfig: NextConfig = {
   // and ship it with the routes that edit ads.
   serverExternalPackages: ["ffmpeg-static"],
   outputFileTracingIncludes: {
-    "/api/ads": ["./node_modules/ffmpeg-static/ffmpeg"],
-    "/api/ads/[id]": ["./node_modules/ffmpeg-static/ffmpeg"],
-    "/api/webhooks/fal": ["./node_modules/ffmpeg-static/ffmpeg"],
+    "/api/ads": ["./node_modules/ffmpeg-static/ffmpeg", "./src/assets/watermark.png"],
+    "/api/ads/[id]": ["./node_modules/ffmpeg-static/ffmpeg", "./src/assets/watermark.png"],
+    "/api/webhooks/fal": ["./node_modules/ffmpeg-static/ffmpeg", "./src/assets/watermark.png"],
   },
 };
 
