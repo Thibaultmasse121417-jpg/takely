@@ -17,7 +17,7 @@ Studio IA de pubs vidéo et de contenus : **photo produit + une phrase → pub v
 
 1. **Scénario** : Claude regarde la photo + le brief et écrit le découpage (1 plan / 5 s), les éléments à garder identiques, la voix off dans la langue choisie et le style de musique (`src/lib/planner.ts`).
 2. **Images de référence** : pour chaque plan, FLUX Kontext remet en scène le produit dans le décor du plan, au bon format.
-3. **Tournage** : chaque image est animée en clip de 5 s (Kling 2.1 Pro image→vidéo).
+3. **Tournage** : chaque image est animée en clip de 5 s (Kling 2.5 Turbo Pro image→vidéo).
 4. **Voix off** (ElevenLabs multilingue) et **musique** (CassetteAI), en parallèle du tournage.
 5. **Montage** sur notre serveur avec ffmpeg (`src/lib/assemble.ts`) : plans coupés bout à bout, voix off par-dessus, musique baissée en dessous, fondus d'entrée et de sortie.
 6. **Déclinaisons** : la vidéo est recadrée automatiquement dans les autres formats possibles (une pub 9:16 sort aussi en 4:5 et 1:1 ; une 16:9 sort aussi en 1:1).
@@ -73,7 +73,7 @@ Test : carte `4242 4242 4242 4242`, n'importe quelle date future et CVC. Échec 
 
 - **Abonnements** (`src/lib/billing.ts`) : Starter 19 €/mois (200 crédits), Pro 49 €/mois (600), Agency 149 €/mois (2000). Les crédits sont versés à chaque facture payée et se cumulent.
 - **Recharges** : 100 crédits 10 €, 300 crédits 27 €, 1000 crédits 85 €.
-- **Coûts visés** : chaque modèle est tarifé pour que le coût fal.ai reste autour de 35 % du prix payé (≈ 65 % de marge brute). Les pubs utilisent Kling 2.1 Pro (≈ 3 fois moins cher que Master).
+- **Coûts visés** : chaque modèle est tarifé pour que le coût fal.ai reste autour de 35 % du prix payé (≈ 65 % de marge brute). Les pubs utilisent Kling 2.5 Turbo Pro (environ 0,35 $ le plan de 5 s). Modèles vérifiés sur la documentation fal.ai le 7 octobre 2026.
 - Changer d'offre : depuis le portail client Stripe. La nouvelle offre démarre au renouvellement suivant, avec ses crédits.
 
 ## À ajuster avant la mise en ligne
