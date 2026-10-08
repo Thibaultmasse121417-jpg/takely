@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { getLocale } from "@/lib/locale";
+import { AuthLinkForwarder } from "@/components/AuthLinkForwarder";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,7 +14,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const locale = await getLocale();
   return (
     <html lang={locale}>
-      <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}>{children}</body>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}>
+        <AuthLinkForwarder />
+        {children}
+      </body>
     </html>
   );
 }
